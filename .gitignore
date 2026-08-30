@@ -1,0 +1,14 @@
+venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+.pytest_cache/
+.claude/
+interview_project/cache/
+interview_project/checkpoints/
+
+# Raw DFL XML files ARE tracked (via git-lfs, see .gitattributes) --
+# intentional, done before this project spec, so data/raw is not ignored.
+# Processed outputs are fully reproducible from `python -m src.parse` and
+# the positions parquets alone run ~175MB, so those stay out of git.
+data/processed/

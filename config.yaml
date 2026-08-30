@@ -1,0 +1,42 @@
+# Central config so every script/notebook reads the same knobs.
+# Rationale for each value lives in README.md's decisions table, not here --
+# this file should stay skimmable.
+
+paths:
+  raw_data: "data"                     # where the DFL_*.xml files live
+  processed_data: "data/processed"     # where parse.py writes its outputs
+
+matches:
+  # DFL match ids for the 7 released Bundesliga games (2022/23, CC-BY 4.0).
+  - J03WMX
+  - J03WN1
+  - J03WPY
+  - J03WOH
+  - J03WQQ
+  - J03WOY
+  - J03WR9
+
+# Positions are recorded at 25 Hz. Consecutive 40ms frames are near-identical
+# for the pass/candidate features we need (player position, coarse velocity),
+# so we keep every 3rd frame -> ~10 Hz. This cuts the working set by ~60%
+# without discarding information the model can actually use.
+target_hz: 10
+
+# Team used for the Stage-2 EDA. Fortuna Düsseldorf is the home team in 5 of
+# the 7 released matches -- the largest single-team sample available here.
+team_name: "Fortuna Düsseldorf"
+
+# nearest = nearest-timestamp frame (baseline).
+# refined = cost-based search in a +/-3s window (see build_dataset.py).
+# refined measured at mean 3.79m ball-to-event distance vs nearest's 8.83m
+# (paper: 9.37m unsynced -> 2.61m refined) -- a real improvement, so it's
+# the default used to build the actual modelling dataset; nearest stays
+# available via this flag for the Stage 3 comparison the spec asks for.
+sync_method: "refined"
+
+# all_matches = ~6,600 passes across all 7 games (default).
+# single_team = Fortuna Düsseldorf passes only (~2,400), for the data-volume
+# comparison called for in Stage 5.
+train_scope: "all_matches"
+
+seed: 42
