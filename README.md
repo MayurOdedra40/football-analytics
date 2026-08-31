@@ -38,6 +38,7 @@ Match ids: `J03WMX`, `J03WN1`, `J03WPY`, `J03WOH`, `J03WQQ`, `J03WOY`, `J03WR9`.
 │   ├── train.py             # Stage 5: training loop, leave-one-match-out CV
 │   └── viz.py                # Stage 6: snapshot/trajectory/plotting helpers
 ├── notebooks/
+│   ├── 00_full_walkthrough.ipynb       # everything, condensed -- the one to show an interviewer
 │   ├── 01_eda.ipynb                    # Stage 2, executed
 │   └── 02_pass_visualisation.ipynb     # Stage 6, executed
 └── tests/
@@ -76,6 +77,7 @@ with `jupyter nbconvert --to notebook --execute --inplace notebooks/*.ipynb`.
 | Feature standardisation (z-score) computed from each fold's **training** data only, applied to val/test with those same statistics | Standardise using the full dataset's statistics upfront | Computing scale/mean from data that includes the held-out match would leak (mild) information about that match into every fold's preprocessing, undermining the leave-one-match-out setup's whole point. |
 | Stage 6's `src/viz.py` re-derives raw per-player snapshots (position, velocity) by re-running Stage 3's exact `MatchPositions`/sync/rotation code, rather than reading them from `pass_candidates.parquet` | Store raw per-player snapshots in Stage 3's output for later reuse | `pass_candidates.parquet` only ever needed opponents' *aggregate* features (nearest-opponent distance, etc.), never their raw coordinates, so it doesn't have them — and drawing "all 22 players" needs them back. Re-running the same synchronisation code (not a separate approximation of it) guarantees the picture matches the exact moment the model was trained/evaluated on. |
 | Stage 6 retrains one demo leave-one-match-out fold (J03WOH held out) instead of loading a saved model | Persist trained model weights from Stage 5's `train.py` for reuse | Stage 5 only needed metrics from each of its 7 folds, not the weights, so nothing was saved to load. Retraining one fold (~7s) inside the notebook is simple, reproducible, and guarantees the demo predictions are genuinely out-of-sample (the model never saw J03WOH), matching the actual evaluation protocol rather than a separately-trained "for show" model. |
+| `notebooks/00_full_walkthrough.ipynb` sets `os.environ["OMP_NUM_THREADS"] = "1"` as its very first line, before any other import | Leave threading at its default | **Found by debugging a real hang, not a preemptive guess**: LightGBM (Stage 4) and PyTorch (Stage 5) each bundle their own OpenMP runtime; training both, multi-threaded, in the same process deadlocks on macOS — confirmed directly by reproducing it outside any notebook (LightGBM finishes in <1s, the very next PyTorch training call then hangs indefinitely, using near-0% CPU, i.e. genuinely blocked, not slow). Forcing single-threaded OpenMP fixes it at no real speed cost given how tiny this model/data is. Relevant to anyone extending this codebase to run LightGBM and PyTorch training back-to-back in one process elsewhere. |
 
 ## Sanity checks (Stage 1)
 
